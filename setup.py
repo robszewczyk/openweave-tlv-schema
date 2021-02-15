@@ -19,7 +19,7 @@
 
 #
 #   @file
-#         Script for building the openweave-tlv-schema source distribution.
+#         Script for building the chip-tlv-schema source distribution.
 #
 
 import os
@@ -27,7 +27,7 @@ from datetime import datetime
 import getpass
 from setuptools import setup
 
-packageName = 'openweave-tlv-schema'
+packageName = 'chip-tlv-schema'
 packageVer = '1.0'
 
 # Allow package name to be overridden in the environment.
@@ -59,7 +59,7 @@ else:
 setup(
     name=packageName,
     version=packageVer,
-    description='Python-based libraries and tools for working with Weave TLV schemas.',
+    description='Python-based libraries and tools for working with CHIP TLV schemas.',
     long_description=buildDescription,
     author='Google LLC',
     url='https://github.com/openweave/openweave-tlv-schema',
@@ -72,17 +72,17 @@ setup(
     ],
     python_requires='>=3.6',
     packages=[
-        'openweave.tlv.schema',
-        'openweave.tlv.schema.tests',
+        'chip.tlv.schema',
+        'chip.tlv.schema.tests',
     ],
     package_data={
-        'openweave.tlv.schema':[
+        'chip.tlv.schema':[
             'tlv-schema-ebnf.txt',
             'LICENSE.txt'
         ]
     },
     scripts=[
-        'weave-tlv-schema'              # Install the TLV schema tool as an executable script in the 'bin' directory.
+        'chip-tlv-schema'              # Install the TLV schema tool as an executable script in the 'bin' directory.
     ],
     install_requires=[
         'lark-parser'
