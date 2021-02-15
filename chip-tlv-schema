@@ -23,5 +23,5 @@
 #
 
 import sys
-from openweave.tlv.schema import tool
+from chip.tlv.schema import tool
 sys.exit(tool.main())
