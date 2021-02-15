@@ -19,111 +19,111 @@
 
 #
 #   @file
-#         Unit tests for PROFILE definitions.
+#         Unit tests for PROTOCOL definitions.
 #
 
 import unittest
 
 from .testutils import TLVSchemaTestCase
 
-class Test_PROFILE(TLVSchemaTestCase):
+class Test_PROTOCOL(TLVSchemaTestCase):
     
-    def test_PROFILE(self):
+    def test_PROTOCOL(self):
         schemaText = '''
-                     profile1 => PROFILE [ id 0 ] { }
-                     profile2 => PROFILE [ id 0x235A:1 ] { }
-                     profile3 => PROFILE [ id Nest:65535 ]
+                     protocol1 => PROTOCOL [ id 0 ] { }
+                     protocol2 => PROTOCOL [ id 0x235A:1 ] { }
+                     protocol3 => PROTOCOL [ id Nest:65535 ]
                      Nest => VENDOR [ id 0x235A ]
                      '''
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertNoErrors(errs)
 
-    def test_PROFILE_NoId(self):
-        schemaText = 'profile1 => PROFILE'
+    def test_PROTOCOL_NoId(self):
+        schemaText = 'protocol1 => PROTOCOL'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'id qualifier missing')
 
-        schemaText = 'profile1 => PROFILE [ ]'
+        schemaText = 'protocol1 => PROTOCOL [ ]'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'id qualifier missing')
 
-        schemaText = 'profile1 => PROFILE [ ] { foo => INTEGER }'
+        schemaText = 'protocol1 => PROTOCOL [ ] { foo => INTEGER }'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'id qualifier missing')
 
-    def test_PROFILE_BadId(self):
-        schemaText = 'profile1 => PROFILE [ id 0x100000000 ]'
+    def test_PROTOCOL_BadId(self):
+        schemaText = 'protocol1 => PROTOCOL [ id 0x100000000 ]'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'invalid id value')
 
-        schemaText = 'profile1 => PROFILE [ id -1 ]'
+        schemaText = 'protocol1 => PROTOCOL [ id -1 ]'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'invalid id value')
 
-        schemaText = 'profile1 => PROFILE [ id 65536:1 ]'
+        schemaText = 'protocol1 => PROTOCOL [ id 65536:1 ]'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'invalid vendor id value')
 
-        schemaText = 'profile1 => PROFILE [ id -1:1 ]'
+        schemaText = 'protocol1 => PROTOCOL [ id -1:1 ]'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'invalid vendor id value')
 
-        schemaText = 'profile1 => PROFILE [ id 0:65536 ]'
+        schemaText = 'protocol1 => PROTOCOL [ id 0:65536 ]'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid profile number value')
+        self.assertError(errs, 'invalid protocol number value')
 
-        schemaText = 'profile1 => PROFILE [ id 0:-1 ]'
+        schemaText = 'protocol1 => PROTOCOL [ id 0:-1 ]'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid profile number value')
+        self.assertError(errs, 'invalid protocol number value')
 
-    def test_PROFILE_BadVendorReference(self):
-        schemaText = 'profile1 => PROFILE [ id unknown:0 ]'
+    def test_PROTOCOL_BadVendorReference(self):
+        schemaText = 'protocol1 => PROTOCOL [ id unknown:0 ]'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'invalid vendor reference')
 
         schemaText = '''
-                     profile1 => PROFILE [ id VeNDoR1:0 ]
+                     protocol1 => PROTOCOL [ id VeNDoR1:0 ]
                      vendor1 => VENDOR [ id 1 ]
                      '''
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
         self.assertError(errs, 'invalid vendor reference')
 
-    def test_PROFILE_InconsistentId(self):
+    def test_PROTOCOL_InconsistentId(self):
         schemaText = '''
-                     profile1 => PROFILE [ id 0x12345678 ]
-                     profile2 => PROFILE [ id 0x87654321 ]
-                     profile1 => PROFILE [ id 42 ]             // ERROR: inconsistent id
-                     profile2 => PROFILE [ id 0x87654321 ]
+                     protocol1 => PROTOCOL [ id 0x12345678 ]
+                     protocol2 => PROTOCOL [ id 0x87654321 ]
+                     protocol1 => PROTOCOL [ id 42 ]             // ERROR: inconsistent id
+                     protocol2 => PROTOCOL [ id 0x87654321 ]
                      '''
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'inconsistent profile id: 0x0000002A (42)')
+        self.assertError(errs, 'inconsistent protocol id: 0x0000002A (42)')
 
-    def test_PROFILE_NonUniqueId(self):
+    def test_PROTOCOL_NonUniqueId(self):
         schemaText = '''
-                     profile1 => PROFILE [ id 0x12345678 ]
-                     profile2 => PROFILE [ id 0x12345678 ]        // ERROR: Id not unique
-                     profile3 => PROFILE [ id 0xFEDCBA98 ]
+                     protocol1 => PROTOCOL [ id 0x12345678 ]
+                     protocol2 => PROTOCOL [ id 0x12345678 ]        // ERROR: Id not unique
+                     protocol3 => PROTOCOL [ id 0xFEDCBA98 ]
                      namespace ns1
                      {
-                         profile3 => PROFILE [ id 0xFEDCBA98 ]    // ERROR: Id not unique
+                         protocol3 => PROTOCOL [ id 0xFEDCBA98 ]    // ERROR: Id not unique
                      }
                      '''
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 2)
-        self.assertError(errs, 'non-unique profile id: 0x12345678 (305419896)')
-        self.assertError(errs, 'non-unique profile id: 0xFEDCBA98 (4275878552)')
+        self.assertError(errs, 'non-unique protocol id: 0x12345678 (305419896)')
+        self.assertError(errs, 'non-unique protocol id: 0xFEDCBA98 (4275878552)')
 
 if __name__ == '__main__':
     unittest.main()

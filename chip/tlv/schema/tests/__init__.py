@@ -30,11 +30,9 @@ from .test_ARRAY import Test_ARRAY
 from .test_CHOICE import Test_CHOICE
 from .test_INTEGER import Test_INTEGER
 from .test_LIST import Test_LIST
-from .test_MESSAGE import Test_MESSAGE
-from .test_PROFILE import Test_PROFILE
+from .test_PROTOCOL import Test_PROTOCOL
 from .test_qualifiers import Test_Qualifiers
 from .test_refs import Test_Refs
-from .test_STATUS_CODE import Test_STATUS_CODE
 from .test_STRUCTURE import Test_STRUCTURE
 from .test_syntax import Test_Syntax
 from .test_tags import Test_Tags

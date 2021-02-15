@@ -64,7 +64,7 @@ class Test_CHOICE(TLVSchemaTestCase):
         self.assertEqual(altChain[0], c1.alternates[0])
         self.assertEqual(name, 'alt1')
         self.assertIsNotNone(defaultTag)
-        self.assertIsNone(defaultTag.profileId)
+        self.assertIsNone(defaultTag.protocolId)
         self.assertEqual(defaultTag.tagNum, 0)
         # Check second alternate
         (altChain, name, defaultTag) = allLeafAlts[1]
@@ -73,7 +73,7 @@ class Test_CHOICE(TLVSchemaTestCase):
         self.assertEqual(altChain[1], c1.alternates[1])
         self.assertEqual(name, 'alt2')
         self.assertIsNotNone(defaultTag)
-        self.assertIsNone(defaultTag.profileId)
+        self.assertIsNone(defaultTag.protocolId)
         self.assertEqual(defaultTag.tagNum, 1)
         # Check third alternate
         (altChain, name, defaultTag) = allLeafAlts[2]
@@ -90,7 +90,7 @@ class Test_CHOICE(TLVSchemaTestCase):
         self.assertEqual(altChain[2], c1.alternates[2])
         self.assertEqual(name, 'alt4')
         self.assertIsNotNone(defaultTag)
-        self.assertIsNone(defaultTag.profileId)
+        self.assertIsNone(defaultTag.protocolId)
         self.assertEqual(defaultTag.tagNum, 4)
         # Check fifth alternate
         (altChain, name, defaultTag) = allLeafAlts[4]
@@ -100,7 +100,7 @@ class Test_CHOICE(TLVSchemaTestCase):
         self.assertEqual(altChain[2], c1.alternates[2])
         self.assertEqual(name, 'alt5')
         self.assertIsNotNone(defaultTag)
-        self.assertIsNone(defaultTag.profileId)
+        self.assertIsNone(defaultTag.protocolId)
         self.assertEqual(defaultTag.tagNum, 5)
 
     def test_CHOICE_possibleTags(self):

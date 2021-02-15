@@ -28,10 +28,7 @@ from .testutils import TLVSchemaTestCase
 
 class Test_Qualifiers(TLVSchemaTestCase):
     
-    _quals = ['extensible',
-              'optional',
-              'private',
-              'invariant',
+    _quals = ['optional',
               'nullable',
               'tag-order',
               'schema-order',
@@ -69,36 +66,12 @@ class Test_Qualifiers(TLVSchemaTestCase):
             allowedQuals=('id'),
             construct='VENDOR definition')
 
-    def test_Qualifiers_AllowedQualifiers_PROFILE(self):
-        schemaText = 'test => PROFILE [ %s ]' % self._allQuals
+    def test_Qualifiers_AllowedQualifiers_PROTOCOL(self):
+        schemaText = 'test => PROTOCOL [ %s ]' % self._allQuals
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self._checkQualifierNotAllowedErrors(errs, 
             allowedQuals=('id'),
-            construct='PROFILE definition')
-
-    def test_Qualifiers_AllowedQualifiers_MESSAGE(self):
-        schemaText = '''
-                      profile1 => PROFILE [ id 1 ]
-                      {
-                          test => MESSAGE [ %s ]
-                      }
-                      ''' % self._allQuals
-        (tlvSchema, errs) = self.loadValidate(schemaText)
-        self._checkQualifierNotAllowedErrors(errs, 
-            allowedQuals=('id'),
-            construct='MESSAGE definition')
-
-    def test_Qualifiers_AllowedQualifiers_STATUS_CODE(self):
-        schemaText = '''
-                      profile1 => PROFILE [ id 1 ]
-                      {
-                          test => STATUS CODE [ %s ]
-                      }
-                      ''' % self._allQuals
-        (tlvSchema, errs) = self.loadValidate(schemaText)
-        self._checkQualifierNotAllowedErrors(errs, 
-            allowedQuals=('id'),
-            construct='STATUS CODE definition')
+            construct='PROTOCOL definition')
 
     def test_Qualifiers_AllowedQualifiers_STRUCTURE(self):
         schemaText = 'test => STRUCTURE [ %s ] { }' % self._allQuals

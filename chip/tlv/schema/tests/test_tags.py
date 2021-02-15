@@ -29,9 +29,9 @@ from .testutils import TLVSchemaTestCase
 
 class Test_Tags(TLVSchemaTestCase):
 
-    def test_Tags_CurrentProfile(self):
+    def test_Tags_CurrentProtocol(self):
         schemaText = '''
-                     profile-1 => PROFILE [ id 0xABCD1234 ]
+                     protocol-1 => PROTOCOL [ id 0xABCD1234 ]
                      {
                        type-1 [ *:42 ] => INTEGER
                      }
@@ -40,48 +40,48 @@ class Test_Tags(TLVSchemaTestCase):
         self.assertNoErrors(errs)
         typeDefNode = next(tlvSchema.allNodes(TypeDef))
         tagNode = typeDefNode.defaultTag
-        self.assertEqual(tagNode.profileId, 0xABCD1234)
+        self.assertEqual(tagNode.protocolId, 0xABCD1234)
         self.assertEqual(tagNode.tagNum, 42)
 
-    def test_Tags_BadProfileReference(self):
-        schemaText = 'test [ undefined-profile:1 ] => INTEGER'
+    def test_Tags_BadProtocolReference(self):
+        schemaText = 'test [ undefined-protocol:1 ] => INTEGER'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid profile reference')
+        self.assertError(errs, 'invalid protocol reference')
 
-        schemaText = 'test => STRUCTURE { field1 [ undefined-profile:1 ] : INTEGER }'
+        schemaText = 'test => STRUCTURE { field1 [ undefined-protocol:1 ] : INTEGER }'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid profile reference')
+        self.assertError(errs, 'invalid protocol reference')
 
-        schemaText = 'test => LIST { field1 [ undefined-profile:1 ] : INTEGER }'
+        schemaText = 'test => LIST { field1 [ undefined-protocol:1 ] : INTEGER }'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid profile reference')
+        self.assertError(errs, 'invalid protocol reference')
 
-        schemaText = 'test => CHOICE OF { field1 [ undefined-profile:1 ] : INTEGER }'
+        schemaText = 'test => CHOICE OF { field1 [ undefined-protocol:1 ] : INTEGER }'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid profile reference')
+        self.assertError(errs, 'invalid protocol reference')
 
-        schemaText = 'test => FIELD GROUP { field1 [ undefined-profile:1 ] : INTEGER }'
+        schemaText = 'test => FIELD GROUP { field1 [ undefined-protocol:1 ] : INTEGER }'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid profile reference')
+        self.assertError(errs, 'invalid protocol reference')
 
-    def test_Tags_BadCurrentProfile(self):
+    def test_Tags_BadCurrentProtocol(self):
         schemaText = 'test [ *:1 ] => INTEGER'
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid reference to current profile')
+        self.assertError(errs, 'invalid reference to current protocol')
 
         schemaText = '''
-                     profile-1 => PROFILE [ id 42 ] { }
+                     protocol-1 => PROTOCOL [ id 42 ] { }
                      test [ *:1 ] => INTEGER
                      '''
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertErrorCount(errs, 1)
-        self.assertError(errs, 'invalid reference to current profile')
+        self.assertError(errs, 'invalid reference to current protocol')
 
     def test_Tags_DefaultTags_TypeDef(self):
         schemaText = '''
@@ -95,7 +95,7 @@ class Test_Tags(TLVSchemaTestCase):
                      
                      vendor-1 => VENDOR [ id 0xAAAA ]
                      
-                     profile-1 => PROFILE [ id vendor-1:0xBBBB ]
+                     protocol-1 => PROTOCOL [ id vendor-1:0xBBBB ]
                      {
                          type-4 [ 4 ] => STRING
                          type-5 => type-1
@@ -107,28 +107,28 @@ class Test_Tags(TLVSchemaTestCase):
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertNoErrors(errs)
         tag = tlvSchema.getTypeDef('type-1').defaultTag
-        self.assertEqual(tag.profileId, 0x253A0000)
+        self.assertEqual(tag.protocolId, 0x253A0000)
         self.assertEqual(tag.tagNum, 1)
         tag = tlvSchema.getTypeDef('ns-1.type-2').defaultTag
-        self.assertEqual(tag.profileId, 0x253A0000)
+        self.assertEqual(tag.protocolId, 0x253A0000)
         self.assertEqual(tag.tagNum, 1)
         tag = tlvSchema.getTypeDef('ns-1.type-3').defaultTag
-        self.assertEqual(tag.profileId, 0x12345678)
+        self.assertEqual(tag.protocolId, 0x12345678)
         self.assertEqual(tag.tagNum, 3)
-        tag = tlvSchema.getTypeDef('profile-1.type-4').defaultTag
-        self.assertEqual(tag.profileId, None)
+        tag = tlvSchema.getTypeDef('protocol-1.type-4').defaultTag
+        self.assertEqual(tag.protocolId, None)
         self.assertEqual(tag.tagNum, 4)
-        tag = tlvSchema.getTypeDef('profile-1.type-5').defaultTag
-        self.assertEqual(tag.profileId, 0x253A0000)
+        tag = tlvSchema.getTypeDef('protocol-1.type-5').defaultTag
+        self.assertEqual(tag.protocolId, 0x253A0000)
         self.assertEqual(tag.tagNum, 1)
-        tag = tlvSchema.getTypeDef('profile-1.type-6').defaultTag
-        self.assertEqual(tag.profileId, 0x253A0000)
+        tag = tlvSchema.getTypeDef('protocol-1.type-6').defaultTag
+        self.assertEqual(tag.protocolId, 0x253A0000)
         self.assertEqual(tag.tagNum, 1)
-        tag = tlvSchema.getTypeDef('profile-1.type-7').defaultTag
-        self.assertEqual(tag.profileId, 0x12345678)
+        tag = tlvSchema.getTypeDef('protocol-1.type-7').defaultTag
+        self.assertEqual(tag.protocolId, 0x12345678)
         self.assertEqual(tag.tagNum, 3)
-        tag = tlvSchema.getTypeDef('profile-1.type-8').defaultTag
-        self.assertEqual(tag.profileId, 0xAAAABBBB)
+        tag = tlvSchema.getTypeDef('protocol-1.type-8').defaultTag
+        self.assertEqual(tag.protocolId, 0xAAAABBBB)
         self.assertEqual(tag.tagNum, 8)
 
     def test_Tags_DefaultTags_StructureFields(self):
@@ -143,7 +143,7 @@ class Test_Tags(TLVSchemaTestCase):
                      
                      vendor-1 => VENDOR [ id 0xAAAA ]
                      
-                     profile-1 => PROFILE [ id vendor-1:0xBBBB ]
+                     protocol-1 => PROTOCOL [ id vendor-1:0xBBBB ]
                      {
                          type-4 [ 42 ] => STRING
                      
@@ -166,24 +166,24 @@ class Test_Tags(TLVSchemaTestCase):
                      '''
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertNoErrors(errs)
-        struct1 = tlvSchema.getTypeDef('profile-1.struct-1').type
+        struct1 = tlvSchema.getTypeDef('protocol-1.struct-1').type
         tag = struct1.getField('field-1').tag
-        self.assertEqual(tag.profileId, None)
+        self.assertEqual(tag.protocolId, None)
         self.assertEqual(tag.tagNum, 1)
         tag = struct1.getField('field-2').tag
-        self.assertEqual(tag.profileId, 0xAAAABBBB)
+        self.assertEqual(tag.protocolId, 0xAAAABBBB)
         self.assertEqual(tag.tagNum, 2)
         tag = struct1.getField('field-3').tag
-        self.assertEqual(tag.profileId, 0x253A0000)
+        self.assertEqual(tag.protocolId, 0x253A0000)
         self.assertEqual(tag.tagNum, 1)
         tag = struct1.getField('field-4').tag
-        self.assertEqual(tag.profileId, 0x12345678)
+        self.assertEqual(tag.protocolId, 0x12345678)
         self.assertEqual(tag.tagNum, 3)
         tag = struct1.getField('field-5').tag
-        self.assertEqual(tag.profileId, None)
+        self.assertEqual(tag.protocolId, None)
         self.assertEqual(tag.tagNum, 5)
         tag = struct1.getField('field-6').tag
-        self.assertEqual(tag.profileId, None)
+        self.assertEqual(tag.protocolId, None)
         self.assertEqual(tag.tagNum, 42)
 
     def test_Tags_DefaultTags_ListElements(self):
@@ -198,33 +198,33 @@ class Test_Tags(TLVSchemaTestCase):
                      
                      vendor-1 => VENDOR [ id 0xAAAA ]
                      
-                     profile-1 => PROFILE [ id vendor-1:0xBBBB ]
+                     protocol-1 => PROTOCOL [ id vendor-1:0xBBBB ]
                      {
                          type-4 [ 42 ] => STRING
                      
                          list-1 => LIST
                          {
                              elem-1 [ 1 ]    : type-1,            // Tag should be context-specific 1
-                             elem-2 [ *:2 ]  : type-1,            // Tag should be profile-specific 0xAAAABBBB:2
-                             elem-3          : ns-1.type-2,       // Tag should be profile-specific 0x253A0000:1
-                             elem-4          : ns-1.type-3,       // Tag should be profile-specific 0x12345678:3
+                             elem-2 [ *:2 ]  : type-1,            // Tag should be protocol-specific 0xAAAABBBB:2
+                             elem-3          : ns-1.type-2,       // Tag should be protocol-specific 0x253A0000:1
+                             elem-4          : ns-1.type-3,       // Tag should be protocol-specific 0x12345678:3
                          }
                      }
                      '''
         (tlvSchema, errs) = self.loadValidate(schemaText)
         self.assertNoErrors(errs)
-        list1 = tlvSchema.getTypeDef('profile-1.list-1').type
+        list1 = tlvSchema.getTypeDef('protocol-1.list-1').type
         tag = list1.getElement('elem-1').tag
-        self.assertEqual(tag.profileId, None)
+        self.assertEqual(tag.protocolId, None)
         self.assertEqual(tag.tagNum, 1)
         tag = list1.getElement('elem-2').tag
-        self.assertEqual(tag.profileId, 0xAAAABBBB)
+        self.assertEqual(tag.protocolId, 0xAAAABBBB)
         self.assertEqual(tag.tagNum, 2)
         tag = list1.getElement('elem-3').tag
-        self.assertEqual(tag.profileId, 0x253A0000)
+        self.assertEqual(tag.protocolId, 0x253A0000)
         self.assertEqual(tag.tagNum, 1)
         tag = list1.getElement('elem-4').tag
-        self.assertEqual(tag.profileId, 0x12345678)
+        self.assertEqual(tag.protocolId, 0x12345678)
         self.assertEqual(tag.tagNum, 3)
 
 if __name__ == '__main__':
