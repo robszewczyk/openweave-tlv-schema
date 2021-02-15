@@ -17,7 +17,7 @@
 
 #
 #    @file
-#      Code for converting a Lark parse trees into a Weave TLV Schema AST. 
+#      Code for converting a Lark parse trees into a CHIP TLV Schema AST. 
 #
 
 import copy
@@ -83,8 +83,8 @@ class _SchemaTransformer(Transformer):
         return node
 
     @v_args(meta=True)
-    def profile_def(self, children, meta):
-        node = Profile(SourceRef.fromMeta(self.schemaFile, meta))
+    def protocol_def(self, children, meta):
+        node = Protocol(SourceRef.fromMeta(self.schemaFile, meta))
         (node.docs, node.docsSourceRef) = self._popOptionalDocs(children)
         (node.name, node.nameSourceRef) = self._popName(children)
         node.quals = self._popOptionalQualList(children)
@@ -96,35 +96,6 @@ class _SchemaTransformer(Transformer):
         self._attachDocsToNodes(node.statements)
         self._setParent(node.quals, node)
         self._setParent(node.statements, node)
-        return node
-
-    @v_args(meta=True)
-    def message_def(self, children, meta):
-        node = Message(SourceRef.fromMeta(self.schemaFile, meta))
-        (node.docs, node.docsSourceRef) = self._popOptionalDocs(children)
-        (node.name, node.nameSourceRef) = self._popName(children)
-        node.quals = self._popOptionalQualList(children)
-        if len(children) > 0:
-            child = children.pop(0)
-            if isinstance(child, TypeNode):
-                node.payload = child
-            else:
-                assert child.data == 'containing_nothing'
-                node.emptyPayload = True
-        assert len(children) == 0
-        self._setParent(node.quals, node)
-        if isinstance(node.payload, SchemaNode):
-            self._setParent(node.payload, node)
-        return node
-
-    @v_args(meta=True)
-    def status_code_def(self, children, meta):
-        node = StatusCode(SourceRef.fromMeta(self.schemaFile, meta))
-        (node.docs, node.docsSourceRef) = self._popOptionalDocs(children)
-        (node.name, node.nameSourceRef) = self._popName(children)
-        node.quals = self._popOptionalQualList(children)
-        assert len(children) == 0
-        self._setParent(node.quals, node)
         return node
 
     @v_args(meta=True)
@@ -219,23 +190,23 @@ class _SchemaTransformer(Transformer):
         return Tag(SourceRef.fromMeta(self.schemaFile, meta), tagNum=tagNum)
 
     @v_args(meta=True)
-    def profile_tag_int(self, children, meta):
-        (profileId, unused) = self._popInt(children, desc='profile id')
-        (tagNum, unused) = self._popInt(children, desc='profile tag')
+    def protocol_tag_int(self, children, meta):
+        (protocolId, unused) = self._popInt(children, desc='protocol id')
+        (tagNum, unused) = self._popInt(children, desc='protocol tag')
         assert len(children) == 0
-        return Tag(SourceRef.fromMeta(self.schemaFile, meta), tagNum=tagNum, profile=profileId)
+        return Tag(SourceRef.fromMeta(self.schemaFile, meta), tagNum=tagNum, protocol=protocolId)
 
     @v_args(meta=True)
-    def profile_tag_name(self, children, meta):
+    def protocol_tag_name(self, children, meta):
         assert len(children) > 0
         if isinstance(children[0], Token) and children[0].type == 'STAR':
-            profile = '*'
+            protocol = '*'
             children.pop(0)
         else: 
-            (profile, unused) = self._popName(children, allowScopedName=True)
-        (tagNum, unused) = self._popInt(children, desc='profile tag')
+            (protocol, unused) = self._popName(children, allowScopedName=True)
+        (tagNum, unused) = self._popInt(children, desc='protocol tag')
         assert len(children) == 0
-        return Tag(SourceRef.fromMeta(self.schemaFile, meta), tagNum=tagNum, profile=profile)
+        return Tag(SourceRef.fromMeta(self.schemaFile, meta), tagNum=tagNum, protocol=protocol)
 
     @v_args(meta=True)
     def anon_tag(self, children, meta):
@@ -464,13 +435,13 @@ class _SchemaTransformer(Transformer):
         try:
             return int(valStr, 0)
         except ValueError: 
-            raise WeaveTLVSchemaError('Invalid %s value: %s' % (desc, valStr), sourceRef=sourceRef)
+            raise CHIPTLVSchemaError('Invalid %s value: %s' % (desc, valStr), sourceRef=sourceRef)
 
     def _parseDecimal(self, valStr, desc='decimal', sourceRef=None):
         try:
             val = Decimal(valStr)
         except ValueError:
-            raise WeaveTLVSchemaError('Invalid %s value: %s' % (desc, valStr), sourceRef=sourceRef)
+            raise CHIPTLVSchemaError('Invalid %s value: %s' % (desc, valStr), sourceRef=sourceRef)
         # normalize to int if possible
         intVal = int(val)
         if intVal == val:
@@ -491,7 +462,7 @@ class _SchemaTransformer(Transformer):
                 nameComponents.append(nameToken.value[1:-1])
         nameVal = '.'.join(nameComponents)
         if len(nameComponents) > 1 and not allowScopedName:
-            raise WeaveTLVSchemaError(msg='Invalid name: %s' % (nameVal),
+            raise CHIPTLVSchemaError(msg='Invalid name: %s' % (nameVal),
                                       detail='Scoped name not allowed in this context',
                                       sourceRef=nameSourceRef)
         return (nameVal, nameSourceRef)
@@ -507,8 +478,6 @@ class _SchemaTransformer(Transformer):
         quantNode = children.pop(0)
         sourceRef = SourceRef.fromMeta(self.schemaFile, quantNode.meta)
         name = quantNode.data
-        if name == 'quant_0_or_1':
-            return (0, 1, sourceRef)
         if name == 'quant_0_or_more':
             return (0, None, sourceRef)
         if name == 'quant_1_or_more':

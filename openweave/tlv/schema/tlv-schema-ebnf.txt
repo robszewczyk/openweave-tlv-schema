@@ -43,10 +43,7 @@ statements                  : statement*
 
 ?statement                  : namespace_def
                             | vendor_def
-                            | profile_def
-                            | message_def
-                            | status_code_def
-                            | using_stmt
+                            | protocol_def
                             | type_def
 
 ?statement_block            : "{" statements "}"
@@ -55,28 +52,13 @@ statements                  : statement*
 
 namespace_def               : DOCS? "namespace"i name statement_block
 
-// ---------- using statement
-
-using_stmt                  : "using"i name
-
 // ---------- VENDOR definition
 
 vendor_def                  : DOCS? name "=>" "VENDOR"i qualifier_list?
 
-// ---------- PROFILE definition
+// ---------- PROTOCOL definition
 
-profile_def                 : DOCS? name "=>" "PROFILE"i qualifier_list? statement_block?
-
-// ---------- MESSAGE definition
-
-message_def                 : DOCS? name "=>" "MESSAGE"i qualifier_list? containing_clause?
-
-?containing_clause          : "CONTAINING"i type
-                            | "CONTAINING"i "NOTHING"i -> containing_nothing
-
-// ---------- STATUS CODE definition
-
-status_code_def             : DOCS? name "=>" "STATUS"i "CODE"i qualifier_list?
+protocol_def                 : DOCS? name "=>" "PROTOCOL"i qualifier_list? statement_block?
 
 // ---------- General type / type definition rules
 
@@ -152,23 +134,21 @@ linear_type_pattern         : DOCS? ltp_elem ( "," POSTFIX_DOCS? DOCS? ltp_elem 
 
 qualifier_list              : "[" [ qualifier ( "," qualifier )* [ "," ] ] "]"
 
-?qualifier                  : "tag"i? tag_arg
+?qualifier                  : "any-order"i -> any_order
+                            | "schema-order"i -> schema_order
+                            | "tag-order"i -> tag_order
+                            | "extensible"i -> extensible
                             | "id"i id_arg
                             | ("length"i | "len"i ) length_arg
-                            | "range"i range_arg
-                            | "extensible"i -> extensible
-                            | "tag-order"i -> tag_order
-                            | "schema-order"i -> schema_order
-                            | "any-order"i -> any_order
-                            | ( "optional"i | "opt"i ) -> optional
-                            | "private"i -> private
-                            | "invariant"i -> invariant
                             | "nullable"i -> nullable
+                            | ( "optional"i | "opt"i ) -> optional
+                            | "range"i range_arg
+                            | "tag"i? tag_arg
 
 tag_arg                     : INT -> context_tag
-                            | INT ":" INT -> profile_tag_int
-                            | name ":" INT -> profile_tag_name
-                            | STAR ":" INT -> profile_tag_name
+                            | INT ":" INT -> protocol_tag_int
+                            | name ":" INT -> protocol_tag_name
+                            | STAR ":" INT -> protocol_tag_name
                             | "anon"i -> anon_tag
 
 id_arg                      : INT -> id
@@ -186,8 +166,7 @@ id_arg                      : INT -> id
 
 // ---------- Quantifier rules
 
-?quantifier                 : "?" -> quant_0_or_1
-                            | "*" -> quant_0_or_more
+?quantifier                 : "*" -> quant_0_or_more
                             | "+" -> quant_1_or_more
                             | "{" INT "}" -> quant_exactly_n
                             | "{" INT ".." INT? "}" -> quant_range

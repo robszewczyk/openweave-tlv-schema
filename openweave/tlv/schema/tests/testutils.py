@@ -28,18 +28,18 @@ import sys
 import os
 import io
 
-from .. import WeaveTLVSchema
-from ..error import WeaveTLVSchemaError
+from .. import CHIPTLVSchema
+from ..error import CHIPTLVSchemaError
 
 class TLVSchemaTestCase(unittest.TestCase):
 
     @staticmethod
     def loadValidate(schemaText):
-        tlvSchema = WeaveTLVSchema()
+        tlvSchema = CHIPTLVSchema()
         errs = []
         try:
             tlvSchema.loadSchemaFromString(schemaText)
-        except WeaveTLVSchemaError as err:
+        except CHIPTLVSchemaError as err:
             errs.append(err)
         errs += tlvSchema.validate()
         return (tlvSchema, errs)

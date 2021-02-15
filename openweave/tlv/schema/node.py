@@ -17,7 +17,7 @@
 
 #
 #    @file
-#      Objects representing Weave TLV Schemas as an AST.
+#      Objects representing CHIP TLV Schemas as an AST.
 #
 
 from decimal import Decimal
@@ -26,13 +26,13 @@ import itertools
 import os
 import re
 
-from .error import WeaveTLVSchemaError, AmbiguousTagError
+from .error import CHIPTLVSchemaError, AmbiguousTagError
 
 
 # ----- Utility functions
 
 def _addSchemaError(errs, msg, detail=None, sourceRef=None):
-    errs.append(WeaveTLVSchemaError(msg=msg, detail=detail, sourceRef=sourceRef))
+    errs.append(CHIPTLVSchemaError(msg=msg, detail=detail, sourceRef=sourceRef))
 
 # ----- Mixin Classes for SchemaNodes
 
@@ -136,7 +136,7 @@ class HasDocumentation(object):
 # ----- SchemaNode Base Classes
 
 class SchemaNode(object):
-    '''Base class for all Weave Schema nodes'''
+    '''Base class for all CHIP TLV Schema nodes'''
     
     def __init__(self, sourceRef=None):
         super(SchemaNode, self).__init__()
@@ -464,7 +464,7 @@ class StructuredTypeNode(HasQualifiers, TypeNode):
 # ----- General SchemaNodes
 
 class SchemaFile(SchemaNode):
-    '''Represents a file or other textual source of Weave Schema'''
+    '''Represents a file or other textual source of CHIP Schema'''
 
     _schemaConstruct = 'schema file'
     
@@ -595,32 +595,32 @@ class Tag(QualifierNode):
 
     _schemaConstruct = 'tag qualifier'
     
-    def __init__(self, sourceRef=None, tagNum=None, profile=None):
+    def __init__(self, sourceRef=None, tagNum=None, protocol=None):
         super(Tag, self).__init__(sourceRef)
         self.tagNum = tagNum
-        self.profile = profile
-        self.profileNode = None
+        self.protocol = protocol
+        self.protocolNode = None
 
     @property
-    def profileId(self):
-        if self.profileNode is not None:
-            return self.profileNode.id
-        return self.profile
+    def protocolId(self):
+        if self.protocolNode is not None:
+            return self.protocolNode.id
+        return self.protocol
 
     @property
     def isAnonTag(self):
-        return self.tagNum is None and self.profile is None
+        return self.tagNum is None and self.protocol is None
 
     @property
     def isContextSpecificTag(self):
-        return self.tagNum is not None and self.profile is None
+        return self.tagNum is not None and self.protocol is None
 
     @property
-    def isProfileSpecificTag(self):
-        return self.tagNum is not None and self.profile is not None
+    def isProtocolSpecificTag(self):
+        return self.tagNum is not None and self.protocol is not None
 
     def asTuple(self):
-        return (self.profileId, self.tagNum)
+        return (self.protocolId, self.tagNum)
 
     @property
     def _summaryTitle(self):
@@ -629,8 +629,8 @@ class Tag(QualifierNode):
     def __str__(self):
         if self.isAnonTag:
             return 'anon'
-        elif self.profile is not None:
-            return '%s:%s (profile-specific)' % (self.profile, self.tagNum)
+        elif self.protocol is not None:
+            return '%s:%s (protocol-specific)' % (self.protocol, self.tagNum)
         else:
             return '%s (context-specific)' % (self.tagNum)
 
@@ -707,10 +707,10 @@ class Vendor(HasName, HasQualifiers, HasDocumentation, SchemaNode):
 
     def validate(self, errs):
         super(Vendor, self).validate(errs)
-        # Confirm that VENDOR is not within a namespace or PROFILE
+        # Confirm that VENDOR is not within a namespace or PROTOCOL
         if self.nextParentNode(Namespace) is not None:
             _addSchemaError(errs, msg='VENDOR definition not at global scope',
-                            detail='VENDOR definitions may not appear within a namespace or PROFILE definition',
+                            detail='VENDOR definitions may not appear within a namespace or PROTOCOL definition',
                             sourceRef=self.sourceRef)
         # Confirm that id qualifier is present
         idQual = self.getQualifier(Id)
@@ -724,14 +724,14 @@ class Vendor(HasName, HasQualifiers, HasDocumentation, SchemaNode):
                                 detail='id value for VENDOR must be a single integer in the range 0-65535',
                                 sourceRef=idQual.sourceRef)
 
-class Profile(HasQualifiers, Namespace):
-    '''Represents a PROFILE definition'''
+class Protocol(HasQualifiers, Namespace):
+    '''Represents a PROTOCOL definition'''
 
-    _schemaConstruct = 'PROFILE definition'
+    _schemaConstruct = 'PROTOCOL definition'
     _allowedQualifiers = (Id)
 
     def __init__(self, sourceRef=None):
-        super(Profile, self).__init__(sourceRef)
+        super(Protocol, self).__init__(sourceRef)
         self._id = None
 
     @property
@@ -747,181 +747,40 @@ class Profile(HasQualifiers, Namespace):
         return self._id
 
     def validate(self, errs):
-        super(Profile, self).validate(errs)
-        self._checkNestedProfiles(errs)
+        super(Protocol, self).validate(errs)
+        self._checkNestedProtocols(errs)
         self._checkInvalidOrMissingId(errs)
-        self._checkDuplicateMessageIds(errs)
-        self._checkDuplicateStatusCodeIds(errs)
 
-    def getMessage(self, name):
-        for msg in self.allStatements(Message):
-            if msg.name == name:
-                return msg
-        return None
-
-    def getStatusCode(self, name):
-        for msg in self.allStatements(StatusCode):
-            if msg.name == name:
-                return msg
-        return None
-    
-    def _checkNestedProfiles(self, errs):
-        '''Verify no nesting of PROFILES'''
-        parentProfile = next((n for n in self.allParentNodes() if isinstance(n, Profile)), None)
-        if parentProfile is not None:
-            _addSchemaError(errs, msg='nested PROFILE definition',
-                            detail='PROFILE definitions may not appear within other PROFILE definitions',
+    def _checkNestedProtocols(self, errs):
+        '''Verify no nesting of PROTOCOLS'''
+        parentProtocol = next((n for n in self.allParentNodes() if isinstance(n, Protocol)), None)
+        if parentProtocol is not None:
+            _addSchemaError(errs, msg='nested PROTOCOL definition',
+                            detail='PROTOCOL definitions may not appear within other PROTOCOL definitions',
                             sourceRef=self.sourceRef)
     
     def _checkInvalidOrMissingId(self, errs):
         '''Verify that the id qualifier is present and valid'''
         idQual = self.getQualifier(Id)
         if idQual is None:
-            _addSchemaError(errs, msg='id qualifier missing on PROFILE definition',
+            _addSchemaError(errs, msg='id qualifier missing on PROTOCOL definition',
                             sourceRef=self.sourceRef)
         else:
             # Confirm that the given id value is correctly structured and in range.
             if idQual.vendor is None:
                 if idQual.idNum < 0 or idQual.idNum > 0xFFFFFFFF:
-                    _addSchemaError(errs, msg='invalid id value for PROFILE definition',
-                                    detail='profile ids must be in the range 0-0xFFFFFFFF',
+                    _addSchemaError(errs, msg='invalid id value for PROTOCOL definition',
+                                    detail='protocol ids must be in the range 0-0xFFFFFFFF',
                                     sourceRef=idQual.sourceRef)
             else:
                 if isinstance(idQual.vendor, int) and (idQual.vendor < 0 or idQual.vendor > 65535):
-                    _addSchemaError(errs, msg='invalid vendor id value for PROFILE definition',
+                    _addSchemaError(errs, msg='invalid vendor id value for PROTOCOL definition',
                                     detail='vendor id must be in the range 0-65535',
                                     sourceRef=idQual.sourceRef)
                 if idQual.idNum < 0 or idQual.idNum > 65535:
-                    _addSchemaError(errs, msg='invalid profile number value for PROFILE definition',
-                                    detail='profile numbers must be in the range 0-65535',
+                    _addSchemaError(errs, msg='invalid protocol number value for PROTOCOL definition',
+                                    detail='protocol numbers must be in the range 0-65535',
                                     sourceRef=idQual.sourceRef)
-
-    def _checkDuplicateMessageIds(self, errs):
-        msgsById = {}
-        for msg in self.allStatements(Message):
-            # Ignore message definitions without ids.  These are errors that are detected elsewhere.
-            if msg.id is None:
-                continue
-            prevMsg = msgsById.get(msg.id, None)
-            if prevMsg is not None:
-                _addSchemaError(errs, msg='duplicate message id: %s' % msg.id,
-                                detail='ids assigned to messages in the PROFILE definition must be unique',
-                                sourceRef=msg.sourceRef)
-            else:
-                msgsById[msg.id] = msg
-
-    def _checkDuplicateStatusCodeIds(self, errs):
-        statusCodesById = {}
-        for sc in self.allStatements(StatusCode):
-            # Ignore status code definitions without ids.  These are errors that are detected elsewhere.
-            if sc.id is None:
-                continue
-            prevSC = statusCodesById.get(sc.id, None)
-            if prevSC is not None:
-                _addSchemaError(errs, msg='duplicate status code id: %s' % sc.id,
-                                detail='ids assigned to status codes in the PROFILE definition must be unique',
-                                sourceRef=sc.sourceRef)
-            else:
-                statusCodesById[sc.id] = sc
-
-class Message(HasScopedName, HasQualifiers, HasDocumentation, SchemaNode):
-    '''Represents a MESSAGE definition'''
-
-    _schemaConstruct = 'MESSAGE definition'
-    _allowedQualifiers = (Id)
-
-    def __init__(self, sourceRef=None):
-        super(Message, self).__init__(sourceRef)
-        self.payload = None
-        self.emptyPayload = False
-    
-    @property
-    def id(self):
-        idQual = self.getQualifier(Id)
-        if idQual is not None:
-            return idQual.idNum
-        else:
-            return None
-        
-    @property
-    def payloadType(self):
-        if not self.emptyPayload:
-            if isinstance(self.payload, ReferencedType):
-                return self.payload.targetType
-            else:
-                return self.payload
-        else:
-            return None
-
-    def allChildNodes(self):
-        for node in super(Message, self).allChildNodes():
-            yield node
-        if self.payload is not None:
-            yield self.payload
-
-    def validate(self, errs):
-        super(Message, self).validate(errs)
-        # Confirm that MESSAGE is directly within a PROFILE definition
-        if not isinstance(self.parent, Profile):
-            _addSchemaError(errs, msg='MESSAGE definition not within PROFILE definition',
-                            detail='MESSAGE definitions must appear directly within a PROFILE definition',
-                            sourceRef=self.sourceRef)
-        # Confirm that id qualifier is present
-        idQual = self.getQualifier(Id)
-        if idQual is None:
-            _addSchemaError(errs, msg='id qualifier missing on MESSAGE definition',
-                            sourceRef=self.sourceRef)
-        else:
-            # Confirm that the given id value is correctly structured and in range.
-            if idQual.vendor is not None or idQual.idNum < 0 or idQual.idNum > 255:
-                _addSchemaError(errs, msg='invalid id value for MESSAGE definition',
-                                detail='id value for MESSAGE must be a single integer in the range 0-255',
-                                sourceRef=idQual.sourceRef)
-
-    def _summarize(self, output, level, indent):
-        super(Message, self)._summarize(output, level, indent)
-        level += 1
-        if self.payload:
-            output.write('%spayload:\n' % (level*indent))
-            self.payload._summarize(output, level+1, indent)
-        elif self.emptyPayload:
-            output.write('%spayload: empty\n' % (level*indent))
-        else:
-            output.write('%spayload: not defined\n' % (level*indent))
-
-class StatusCode(HasScopedName, HasQualifiers, HasDocumentation, SchemaNode):
-    '''Represents a STATUS CODE definition'''
-    
-    _schemaConstruct = 'STATUS CODE definition'
-    _allowedQualifiers = (Id)
-
-    @property
-    def id(self):
-        idQual = self.getQualifier(Id)
-        if idQual is not None:
-            return idQual.idNum
-        else:
-            return None
-        
-    def validate(self, errs):
-        super(StatusCode, self).validate(errs)
-        # Confirm that STATUS CODE is directly within a PROFILE definition
-        if not isinstance(self.parent, Profile):
-            _addSchemaError(errs, msg='STATUS CODE definition not within PROFILE definition',
-                            detail='STATUS CODE definitions must appear directly within a PROFILE definition',
-                            sourceRef=self.sourceRef)
-        # Confirm that id qualifier is present
-        idQual = self.getQualifier(Id)
-        if idQual is None:
-            _addSchemaError(errs, msg='id qualifier missing on STATUS CODE definition',
-                            sourceRef=self.sourceRef)
-        else:
-            # Confirm that the given id value is correctly structured and in range.
-            if idQual.vendor is not None or idQual.idNum < 0 or idQual.idNum > 65535:
-                _addSchemaError(errs, msg='invalid id value for STATUS CODE definition',
-                                detail='id value for STATUS CODE must be a single integer in the range 0-65535',
-                                sourceRef=idQual.sourceRef)
-
 
 class TypeDef(HasScopedName, HasQualifiers, HasDocumentation, SchemaNode):
     '''Represents a type definition'''
@@ -970,23 +829,6 @@ class TypeDef(HasScopedName, HasQualifiers, HasDocumentation, SchemaNode):
         level += 1
         output.write('%stype:\n' % (level*indent))
         self.type._summarize(output, level+1, indent)
-
-# ----- Statement SchemaNodes
-
-class Using(SchemaNode):
-    '''Represents a using statement'''
-
-    _schemaConstruct = 'using statement'
-
-    def __init__(self, sourceRef=None):
-        super(Using, self).__init__(sourceRef)
-        self.targetName = None
-        self.targetNameSourceRef = None
-        self.fullyQualifiedTargetName = None
-
-    @property
-    def _summaryTitle(self):
-        return '%s: %s' % (type(self).__name__, self.targetName)
 
 # ----- Type SchemaNodes
 

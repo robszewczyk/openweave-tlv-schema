@@ -19,11 +19,11 @@
 
 #
 #   @file
-#         Package init file for openweave.tlv.schema.tests.
+#         Package init file for chip.tlv.schema.tests.
 #
 
 
-'''Implements unit test for Weave TLV Schema APIs.'''
+'''Implements unit test for CHIP TLV Schema APIs.'''
 
 
 from .test_ARRAY import Test_ARRAY

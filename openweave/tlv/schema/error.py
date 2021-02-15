@@ -17,14 +17,14 @@
 
 #
 #    @file
-#      Weave TLV Schema errors. 
+#      CHIP TLV Schema errors.
 #
 
 import os
 
-class WeaveTLVSchemaError(Exception):
+class CHIPTLVSchemaError(Exception):
     def __init__(self, msg, detail=None, sourceRef=None):
-        super(WeaveTLVSchemaError, self).__init__(msg)
+        super(CHIPTLVSchemaError, self).__init__(msg)
         self.detail = detail
         self.sourceRef = sourceRef
         

@@ -17,7 +17,7 @@
 
 #
 #    @file
-#      Code for parsing and interpreting Weave TLV Schemas. 
+#      Code for parsing and interpreting CHIP TLV Schemas. 
 #
 
 import sys
@@ -32,7 +32,7 @@ from .node import *
 from .node import _addSchemaError
 from .transformer import _SchemaTransformer
 
-class WeaveTLVSchema(object):
+class CHIPTLVSchema(object):
     EBNFFileName = 'tlv-schema-ebnf.txt'
     
     _schemaParser = None
@@ -42,16 +42,16 @@ common => VENDOR [ id 0 ]
 '''
     
     def __init__(self):
-        if WeaveTLVSchema._schemaParser is None:
+        if CHIPTLVSchema._schemaParser is None:
             scriptDir = os.path.dirname(os.path.realpath(__file__))
-            with open(os.path.join(scriptDir, WeaveTLVSchema.EBNFFileName), "r") as s:
+            with open(os.path.join(scriptDir, CHIPTLVSchema.EBNFFileName), "r") as s:
                 schemaSyntax = s.read()
-                WeaveTLVSchema._schemaParser = Lark(schemaSyntax, parser='lalr', lexer='standard', 
+                CHIPTLVSchema._schemaParser = Lark(schemaSyntax, parser='lalr', lexer='standard', 
                                                     start='file', propagate_positions=True)
         self._schemaFiles = []
         self._vendors = defaultdict(list)
         self._namespaces = defaultdict(list)
-        self._profiles = defaultdict(list)
+        self._protocols = defaultdict(list)
         self._typeDefs = defaultdict(list)
         self._defaultSchemaLoaded = False
 
@@ -70,7 +70,7 @@ common => VENDOR [ id 0 ]
         schemaFile = SchemaFile(fileName, schemaText)
         
         try:
-            schemaTree = WeaveTLVSchema._schemaParser.parse(schemaText)
+            schemaTree = CHIPTLVSchema._schemaParser.parse(schemaText)
             _SchemaTransformer(schemaFile).transform(schemaTree)
         except LarkError as parseErr:
             raise self._translateParseError(parseErr, schemaFile) from None
@@ -110,12 +110,12 @@ common => VENDOR [ id 0 ]
         self.loadDefaultSchema()
         self._resolveTypeReferences(errs)
         self._resolveVendorReferences(errs)
-        self._resolveProfileReferences(errs)
+        self._resolveProtocolReferences(errs)
         for node in self.allNodes():
             node.validate(errs)
         self._checkInconsistentVendorIds(errs)
-        self._checkInconsistentProfileIds(errs)
-        self._checkUniqueProfileIds(errs)
+        self._checkInconsistentProtocolIds(errs)
+        self._checkUniqueProtocolIds(errs)
         return errs
     
     def allNodes(self, classinfo=object):
@@ -138,18 +138,18 @@ common => VENDOR [ id 0 ]
             return typeDefList[0]
         return None
 
-    def getProfile(self, profileName):
-        '''Lookup a Profile node by name.
-           Returns None if not found. If multiple Profile nodes exist with the same
+    def getProtocol(self, protocolName):
+        '''Lookup a Protocol node by name.
+           Returns None if not found. If multiple Protocol nodes exist with the same
            name, the first such node is returned.'''
-        profileList = self._profiles.get(profileName, None)
-        if profileList is not None:
-            return profileList[0]
+        protocolList = self._protocols.get(protocolName, None)
+        if protocolList is not None:
+            return protocolList[0]
         return None
 
     def getVendor(self, vendorName):
         '''Lookup a Vendor node by name.
-           Returns None if not found. If multiple Profile nodes exist with the same
+           Returns None if not found. If multiple Protocol nodes exist with the same
            name, the first such node is returned.'''
         vendorList = self._vendors.get(vendorName, None)
         if vendorList is not None:
@@ -163,8 +163,8 @@ common => VENDOR [ id 0 ]
             self._vendors[node.name].append(node)
         for node in schemaFile.allNodes(Namespace):
             self._namespaces[node.fullyQualifiedName].append(node)
-        for node in schemaFile.allNodes(Profile):
-            self._profiles[node.fullyQualifiedName].append(node)
+        for node in schemaFile.allNodes(Protocol):
+            self._protocols[node.fullyQualifiedName].append(node)
         for node in schemaFile.allNodes(TypeDef):
             self._typeDefs[node.fullyQualifiedName].append(node)
 
@@ -182,35 +182,35 @@ common => VENDOR [ id 0 ]
                                     detail='VENDOR definitions with the same name must declare the same vendor id',
                                     sourceRef=vendor.sourceRef)
 
-    def _checkInconsistentProfileIds(self, errs):
-        '''Check that all PROFILE definitions with the same name have the same profile id'''
-        for likeNamedProfiles in self._profiles.values():
-            # Ignore profile definitions without ids.  These are errors that are detected elsewhere.
-            likeNamedProfiles = [ p for p in likeNamedProfiles if p.id is not None ]
-            if len(likeNamedProfiles) == 0:
+    def _checkInconsistentProtocolIds(self, errs):
+        '''Check that all PROTOCOL definitions with the same name have the same protocol id'''
+        for likeNamedProtocols in self._protocols.values():
+            # Ignore protocol definitions without ids.  These are errors that are detected elsewhere.
+            likeNamedProtocols = [ p for p in likeNamedProtocols if p.id is not None ]
+            if len(likeNamedProtocols) == 0:
                 continue
-            id = likeNamedProfiles[0].id
-            for profile in likeNamedProfiles:
-                if profile.id != id:
-                    _addSchemaError(errs, msg='inconsistent profile id: 0x%08X (%d)' % (profile.id, profile.id),
-                                    detail='PROFILE definitions with the same name must declare the same profile id',
-                                    sourceRef=profile.sourceRef)
+            id = likeNamedProtocols[0].id
+            for protocol in likeNamedProtocols:
+                if protocol.id != id:
+                    _addSchemaError(errs, msg='inconsistent protocol id: 0x%08X (%d)' % (protocol.id, protocol.id),
+                                    detail='PROTOCOL definitions with the same name must declare the same protocol id',
+                                    sourceRef=protocol.sourceRef)
 
-    def _checkUniqueProfileIds(self, errs):
-        '''Check that all PROFILE definitions with different names have distinct profile ids'''
-        profilesById = {}
-        for profile in self.allNodes(Profile):
-            # Ignore profile definitions without ids. These are errors that are detected elsewhere.
-            if profile.id is None:
+    def _checkUniqueProtocolIds(self, errs):
+        '''Check that all PROTOCOL definitions with different names have distinct protocol ids'''
+        protocolsById = {}
+        for protocol in self.allNodes(Protocol):
+            # Ignore protocol definitions without ids. These are errors that are detected elsewhere.
+            if protocol.id is None:
                 continue
-            otherProfile = profilesById.get(profile.id, None)
-            if otherProfile is not None:
-                if profile.fullyQualifiedName != otherProfile.fullyQualifiedName:
-                    _addSchemaError(errs, msg='non-unique profile id: 0x%08X (%d)' % (profile.id, profile.id),
-                                    detail='PROFILE definitions with distinct names must have distinct profile ids',
-                                    sourceRef=profile.sourceRef)
+            otherProtocol = protocolsById.get(protocol.id, None)
+            if otherProtocol is not None:
+                if protocol.fullyQualifiedName != otherProtocol.fullyQualifiedName:
+                    _addSchemaError(errs, msg='non-unique protocol id: 0x%08X (%d)' % (protocol.id, protocol.id),
+                                    detail='PROTOCOL definitions with distinct names must have distinct protocol ids',
+                                    sourceRef=protocol.sourceRef)
             else:
-                profilesById[profile.id] = profile
+                protocolsById[protocol.id] = protocol
 
     def _resolveTypeReferences(self, errs):
         '''Resolve the type names in all type reference nodes (e.g. ReferencedType and
@@ -271,7 +271,7 @@ common => VENDOR [ id 0 ]
 
     def _resolveVendorReferences(self, errs):
         for idNode in self.allNodes(Id):
-            if not isinstance(idNode.parent, Profile):
+            if not isinstance(idNode.parent, Protocol):
                 continue
             if isinstance(idNode.vendor, str):
                 idNode.vendorNode = self.getVendor(idNode.vendor)
@@ -280,28 +280,28 @@ common => VENDOR [ id 0 ]
                                     detail='a VENDOR definition with the specified name could not be found',
                                     sourceRef=idNode.sourceRef)
 
-    def _resolveProfileReferences(self, errs):
+    def _resolveProtocolReferences(self, errs):
         for tagNode in self.allNodes(Tag):
-            if isinstance(tagNode.profile, str):
-                if tagNode.profile == '*':
-                    tagNode.profileNode = tagNode.nextParentNode(Profile)
-                    if tagNode.profileNode is None:
-                        _addSchemaError(errs, msg='invalid reference to current profile',
-                                        detail='a current profile reference (*) must appear within a PROFILE definition',
+            if isinstance(tagNode.protocol, str):
+                if tagNode.protocol == '*':
+                    tagNode.protocolNode = tagNode.nextParentNode(Protocol)
+                    if tagNode.protocolNode is None:
+                        _addSchemaError(errs, msg='invalid reference to current protocol',
+                                        detail='a current protocol reference (*) must appear within a PROTOCOL definition',
                                         sourceRef=tagNode.sourceRef)
                 else:
-                    tagNode.profileNode = self.getProfile(tagNode.profile)
-                    if tagNode.profileNode is None:
-                        _addSchemaError(errs, msg='invalid profile reference: %s' % tagNode.profile,
-                                        detail='a PROFILE definition with the specified name could not be found',
+                    tagNode.protocolNode = self.getProtocol(tagNode.protocol)
+                    if tagNode.protocolNode is None:
+                        _addSchemaError(errs, msg='invalid protocol reference: %s' % tagNode.protocol,
+                                        detail='a PROTOCOL definition with the specified name could not be found',
                                         sourceRef=tagNode.sourceRef)
                     
 
 
     def _translateParseError(self, parseErr, schemaFile):
-        # If a WeaveTLVSchemaError was raised during the tree transformation process
+        # If a CHIPTLVSchemaError was raised during the tree transformation process
         # raise that error directly.
-        if isinstance(parseErr, VisitError) and isinstance(parseErr.orig_exc, WeaveTLVSchemaError):
+        if isinstance(parseErr, VisitError) and isinstance(parseErr.orig_exc, CHIPTLVSchemaError):
             return parseErr.orig_exc
         
         if isinstance(parseErr, UnexpectedCharacters):
@@ -314,7 +314,7 @@ common => VENDOR [ id 0 ]
             r = re.compile('"[^"]*$', re.MULTILINE)
             m = r.match(schemaFile.schemaText, pos=parseErr.pos_in_stream)
             if m:
-                return WeaveTLVSchemaError(msg='unterminated string', sourceRef=sourceRef)
+                return CHIPTLVSchemaError(msg='unterminated string', sourceRef=sourceRef)
 
             # Report an invalid name
             r = re.compile(''' ([A-Za-z0-9_-]+) | ("[^']*") ''', re.MULTILINE|re.VERBOSE)
@@ -324,16 +324,16 @@ common => VENDOR [ id 0 ]
                 sourceRef.endCol += l
                 sourceRef.endPos += l
                 if m.group() == '""':
-                    return WeaveTLVSchemaError(msg='unexpected input: ""', sourceRef=sourceRef)
+                    return CHIPTLVSchemaError(msg='unexpected input: ""', sourceRef=sourceRef)
                 elif re.match(''' ([0-9-][A-Za-z0-9_-]*) | ("[0-9-][A-Za-z0-9_-]*") ''', m.group(), re.VERBOSE):
                     detail = 'names must begin with a letter or an underbar'
                 else:
                     detail = 'names must contain alphanumeric characters, dashes and underbars only'
-                return WeaveTLVSchemaError(msg='invalid name: %s' % m.group(), detail=detail, sourceRef=sourceRef)
+                return CHIPTLVSchemaError(msg='invalid name: %s' % m.group(), detail=detail, sourceRef=sourceRef)
 
             # Report an unexpected input character
             unexpected = schemaFile.schemaText[parseErr.pos_in_stream]
-            return WeaveTLVSchemaError(msg='unexpected input: %s' % unexpected, sourceRef=sourceRef)
+            return CHIPTLVSchemaError(msg='unexpected input: %s' % unexpected, sourceRef=sourceRef)
 
         if isinstance(parseErr, UnexpectedToken):
             token = parseErr.token
@@ -364,7 +364,7 @@ common => VENDOR [ id 0 ]
                 elif parseErr.expected and any(e == 'RBRACE' for e in parseErr.expected):
                     detail = 'possibly missing }'
                 
-            return WeaveTLVSchemaError(msg=msg, detail=detail, sourceRef=sourceRef)
+            return CHIPTLVSchemaError(msg=msg, detail=detail, sourceRef=sourceRef)
         
         return parseErr
 

@@ -19,15 +19,15 @@
 
 #
 #   @file
-#         Tool for working with Weave TLV schemas.
+#         Tool for working with CHIP TLV schemas.
 #
 
 
 import sys
 import os
 import argparse
-from .obj import WeaveTLVSchema
-from .error import WeaveTLVSchemaError
+from .obj import CHIPTLVSchema
+from .error import CHIPTLVSchemaError
 
 scriptName = os.path.basename(sys.argv[0])
 
@@ -61,7 +61,7 @@ class _ValidateCommand(object):
         if len(args.files) == 0:
             raise _UsageError('{0} {1}: Please specify one or more schema files'.format(scriptName, self.name))
         
-        schema = WeaveTLVSchema()
+        schema = CHIPTLVSchema()
         
         errs = []
         
@@ -70,7 +70,7 @@ class _ValidateCommand(object):
                 raise _UsageError('{0} {1}: Schema file not found: {0}\n'.format(scriptName, self.name, schemaFileName))
             try:
                 schema.loadSchemaFromFile(schemaFileName)
-            except WeaveTLVSchemaError as err:
+            except CHIPTLVSchemaError as err:
                 errs.append(err)
 
         errs += schema.validate()
@@ -109,7 +109,7 @@ class _DumpCommand(object):
         if len(args.files) == 0:
             raise _UsageError('{0} {1}: Please specify one or more schema files'.format(scriptName, self.name))
         
-        schema = WeaveTLVSchema()
+        schema = CHIPTLVSchema()
         
         for schemaFileName in args.files:
             if not os.path.exists(schemaFileName):
@@ -162,7 +162,7 @@ class _HelpCommand(object):
     def help(self):
         maxWidth = max((len(c.name) for c in self.availCommands))
         commandSummary = ''.join(( '\n  {0:<{width}} - {1}'.format(c.name, c.summary, width=maxWidth) for c in self.availCommands ))
-        return ('{0} : A tool for working with Weave TLV Schemas\n'
+        return ('{0} : A tool for working with CHIP TLV Schemas\n'
                 '\n'
                 'Usage:\n'
                 '  {0} {{command}} [options] ...\n'

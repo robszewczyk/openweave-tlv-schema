@@ -17,9 +17,9 @@
 
 #
 #    @file
-#      Package init file for openweave.tlv.schema. 
+#      Package init file for chip.tlv.schema. 
 #
 
-'''Provides Python APIs for working with Weave TLV Schemas.'''
+'''Provides Python APIs for working with CHIP TLV Schemas.'''
 
-from .obj import WeaveTLVSchema
+from .obj import CHIPTLVSchema
