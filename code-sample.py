@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import sys
-from openweave.tlv.schema import WeaveTLVSchema
+from chip.tlv.schema import CHIPTLVSchema
 
-tlvSchema = WeaveTLVSchema()
+tlvSchema = CHIPTLVSchema()
 
 # Load the schema file.
 tlvSchema.loadSchemaFromFile('examples/temp-sample.txt')

@@ -18,7 +18,7 @@
 
 /*
  *    Example schema illustrating the wireless regulatory schema constructs
- *    from the Weave Network Provisioning profile.
+ *    from the  Network Provisioning profile.
  */
 
 

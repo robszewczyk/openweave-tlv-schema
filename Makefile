@@ -17,20 +17,23 @@
 
 #
 #   @file
-#         Trivial makefile for building openweave-tlv-schema package.
+#         Trivial makefile for building chip-tlv-schema package.
 #
 
 all : package
-	
+
+
 package :
 	./setup.py sdist	
 
 install : package
-	pip3 install --user dist/openweave-tlv-schema-*.tar.gz
-	
+	pip3 install --user dist/chip-tlv-schema-*.tar.gz
+
+
 uninstall :
-	pip3 uninstall -y openweave-tlv-schema
-	
+	pip3 uninstall -y chip-tlv-schema
+
+
 clean :
-	rm -rf dist openweave_tlv_schema.egg-info
+	rm -rf dist chip_tlv_schema.egg-info
 
